@@ -1,14 +1,22 @@
 #ifndef _CLIENT_H_
 #define _CLIENT_H_
 
+#include <stdbool.h>
+#include <chainedlist.h>
 #include <pthread.h>
 
-typedef struct Client
+typedef struct client
 {
     char* nickname;
     pthread_t client_thread;
     int client_socket;
     pthread_mutex_t client_sock_mutex;
-}Client;
+}client;
+
+list* client_list;
+
+void client_list_init();
+
+void client_connect(client_info* cli);
 
 #endif

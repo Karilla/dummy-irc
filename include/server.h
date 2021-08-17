@@ -11,13 +11,14 @@
 #include "netdb.h"
 #include "errno.h"
 
-typedef struct client_info
-{
-    pthread_t client_thread;
-    int client_socket;
-}client_info;
+typedef struct client_info_struct {
+	pthread_t cli_thread; 
+	int cli_socket; 
+} client_info; 
 
 int create_server(char* port);
+
+int server_listen(int server_socket);
 
 void server_accept_main_loop(int server_socket);
 

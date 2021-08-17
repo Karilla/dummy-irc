@@ -1,5 +1,6 @@
-#include <stdio.h>
 #include <server.h>
+#include <client.h>
+#include <pthread.h>
 
 int create_server(char* port)
 {
@@ -19,27 +20,35 @@ int create_server(char* port)
 
     getaddrinfo(NULL,port,&hints,&addr);
 
-    socket_fd = socket(addr->ai_family,addr->ai_socktype,addr->ai_protocol);
+    struct addrinfo* iter;
 
-    if(socket < 0)
-    {
-        fprintf(stderr,"Error creating the socket");
-        exit(EXIT_FAILURE);
-    }
+	for (iter = addr; iter != NULL; iter = iter->ai_next) {							// try all sockets
+		socket_fd = socket(iter->ai_family, iter->ai_socktype, iter->ai_protocol);
 
-    if(bind(socket_fd,addr->ai_addr,addr->ai_addrlen) < 0)
-    {
-        fprintf(stderr,"Cannot bind the socket\n");
-        exit(EXIT_FAILURE);
-    }
+		if (socket_fd < 0)															// this one failed, try next
+			continue;
+
+		if (bind(socket_fd, iter->ai_addr, iter->ai_addrlen) == 0)					// success, use it
+			break;
+
+		fprintf(stderr, "Error calling bind: %s\n", strerror(errno));
+
+		close(socket_fd);															// socket failed to bind, so this should be closed
+	}
 
     return socket_fd;
 
 }
 
+int server_listen(int server_socket)
+{
+    printf("Listening...\n");
+    return listen(server_socket,1024);
+}
+
 void server_accept_main_loop(int server_socket)
 {
-    int client_socket;
+    int client_socket = 2;
     client_info* new_client;
     struct sockaddr client_addr;
     socklen_t client_size = sizeof(struct sockaddr);
@@ -49,17 +58,20 @@ void server_accept_main_loop(int server_socket)
     for(;;)
     {
 
+        client_socket = accept(server_socket,&client_addr,&client_size);
+
         if(client_socket < 0)
         {
-            fprintf(stderr,"Client connection failed");
-            exit(EXIT_FAILURE);
+            fprintf(stderr,"Client connection failed\n");
+            continue;
         }
 
-        client_socket = accept(server_socket,&client_addr,client_size);
-
+        printf("New connection...\n");
 
         new_client = (client_info*)malloc(sizeof(client_info));
-        new_client->client_socket = client_socket;
+        new_client->cli_socket = client_socket;
+        printf("Connecting client on socket %i\n", client_socket);
+        pthread_create(&(new_client->cli_thread), NULL, (void*(*)(void*))client_connect, (void*)(new_client));
     }
 
     

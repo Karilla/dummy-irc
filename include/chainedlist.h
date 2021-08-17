@@ -1,6 +1,7 @@
 #ifndef _CHAINEDLIST_H_
 #define _CHAINEDLIST_H_
 
+#include <stdlib.h>
 #include <stddef.h>
 
 typedef struct node_struct node;
